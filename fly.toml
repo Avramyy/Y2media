@@ -1,0 +1,21 @@
+app = "y2media-bot"
+primary_region = "ams"
+
+[build]
+
+[env]
+  # Token is set via fly secrets (see instructions below)
+
+[[services]]
+  internal_port = 0
+  protocol = "tcp"
+
+  [services.concurrency]
+    type = "connections"
+    hard_limit = 25
+    soft_limit = 20
+
+[[vm]]
+  cpu_kind = "shared"
+  cpus = 1
+  memory_mb = 256
