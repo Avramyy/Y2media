@@ -378,7 +378,7 @@ def main():
         print("========================================\n")
         return
 
-    print("\n🎬 YouTube Downloader Bot is starting...")
+    print("\nYouTube Downloader Bot is starting...")
     print("   Press Ctrl+C to stop.\n")
 
     app = Application.builder().token(BOT_TOKEN).build()
