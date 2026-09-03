@@ -91,6 +91,40 @@ youtube-downloader/
 
 ---
 
+## 🤖 Telegram Bot
+
+You can also use this as a **Telegram Bot** — download YouTube videos directly in chat!
+
+### Setup
+
+1. Open Telegram, search for **@BotFather**
+2. Send `/newbot`
+3. Give it a name (e.g. "YouTube Downloader Bot")
+4. Give it a username ending with `bot` (e.g. `AvramY2MediaBot`)
+5. Copy the token BotFather gives you
+
+### Run the Bot
+
+```bash
+# Set your bot token
+set TELEGRAM_BOT_TOKEN=your_token_here
+
+# Run the bot
+python bot.py
+```
+
+Or edit `bot.py` and paste your token on line 13.
+
+### Bot Features
+
+- Send any YouTube URL → get a download button
+- Choose MP3 or MP4 with quality selection
+- Progress updates while downloading
+- Files sent directly in Telegram chat
+- Thumbnail preview before download
+
+---
+
 ## 🛠️ Tech Stack
 
 - **Backend:** Python, Flask
