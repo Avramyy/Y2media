@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
+  <!-- Background circle -->
+  <circle cx="256" cy="256" r="240" fill="#ff0033"/>
+  <!-- Play triangle -->
+  <path d="M200 140 L380 256 L200 372 Z" fill="#fff"/>
+  <!-- Download arrow -->
+  <g transform="translate(256,420)" stroke="#fff" stroke-width="28" stroke-linecap="round" stroke-linejoin="round">
+    <line x1="0" y1="-50" x2="0" y2="10"/>
+    <polyline points="-30,-20 0,10 30,-20"/>
+  </g>
+</svg>

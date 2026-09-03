@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#ff0033">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="description" content="Free YouTube to MP3 & MP4 converter. Works on PC and mobile.">
+    <title>YouTube Downloader — MP3 & MP4</title>
+    <link rel="icon" type="image/svg+xml" href="/static/icon.svg">
+    <link rel="apple-touch-icon" href="/static/icon.svg">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --red: #ff0033;
+            --dark: #0f0f0f;
+            --card: #1a1a2e;
+            --input: #16213e;
+            --text: #e0e0e0;
+            --muted: #888;
+            --accent: #ff0033;
+            --success: #00c853;
+            --radius: 12px;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--dark);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            padding-bottom: 40px;
+        }
+
+        .logo {
+            margin-top: 20px;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .logo img { width: 48px; height: 48px; }
+        .logo h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #ff0033, #ff6b6b);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .subtitle {
+            color: var(--muted);
+            margin-bottom: 24px;
+            font-size: 0.9rem;
+        }
+
+        .card {
+            background: var(--card);
+            border-radius: var(--radius);
+            padding: 28px;
+            width: 100%;
+            max-width: 520px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+            position: relative;
+        }
+        .input-group label {
+            display: block;
+            font-size: 0.85rem;
+            color: var(--muted);
+            margin-bottom: 6px;
+            font-weight: 500;
+        }
+        .input-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+        .input-wrapper input {
+            width: 100%;
+            padding: 14px 44px 14px 16px;
+            border: 2px solid #2a2a4a;
+            border-radius: 10px;
+            background: var(--input);
+            color: var(--text);
+            font-size: 1rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .input-wrapper input:focus { border-color: var(--accent); }
+        .input-wrapper input::placeholder { color: #555; }
+
+        /* Paste button inside input */
+        .paste-btn {
+            position: absolute;
+            right: 6px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(255,255,255,0.08);
+            border: none;
+            border-radius: 8px;
+            padding: 7px 10px;
+            cursor: pointer;
+            color: var(--muted);
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 0.75rem;
+            transition: all 0.2s;
+        }
+        .paste-btn:hover {
+            background: rgba(255,0,51,0.15);
+            color: var(--accent);
+        }
+        .paste-btn svg { width: 16px; height: 16px; }
+
+        /* Custom right-click context menu */
+        .ctx-menu {
+            position: fixed;
+            z-index: 1000;
+            background: #1e1e3a;
+            border: 1px solid #3a3a5c;
+            border-radius: 10px;
+            padding: 6px 0;
+            min-width: 180px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+            display: none;
+        }
+        .ctx-menu.visible { display: block; }
+        .ctx-menu-item {
+            padding: 10px 16px;
+            font-size: 0.9rem;
+            color: var(--text);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: background 0.15s;
+        }
+        .ctx-menu-item:hover {
+            background: rgba(255,0,51,0.12);
+            color: #fff;
+        }
+        .ctx-menu-item svg { width: 16px; height: 16px; opacity: 0.7; }
+        .ctx-menu-divider {
+            height: 1px;
+            background: #2a2a4a;
+            margin: 4px 0;
+        }
+
+        /* Video preview card */
+        .preview-card {
+            margin-bottom: 20px;
+            background: #12122a;
+            border-radius: 10px;
+            overflow: hidden;
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+        .preview-card.visible { display: block; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .preview-thumb {
+            width: 100%;
+            aspect-ratio: 16/9;
+            object-fit: cover;
+            display: block;
+            background: #0a0a1a;
+        }
+        .preview-info {
+            padding: 12px 14px;
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+        }
+        .preview-text { flex: 1; min-width: 0; }
+        .preview-title {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #fff;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .preview-meta {
+            font-size: 0.75rem;
+            color: var(--muted);
+            margin-top: 3px;
+            display: flex;
+            gap: 8px;
+        }
+        .preview-meta span {
+            display: flex;
+            align-items: center;
+            gap: 3px;
+        }
+        .preview-check {
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: rgba(0,200,83,0.15);
+            color: var(--success);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+        .preview-check svg { width: 14px; height: 14px; }
+
+        .options {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .option-group { flex: 1; }
+        .option-group label {
+            display: block;
+            font-size: 0.85rem;
+            color: var(--muted);
+            margin-bottom: 6px;
+            font-weight: 500;
+        }
+        .option-group select {
+            width: 100%;
+            padding: 12px 14px;
+            border: 2px solid #2a2a4a;
+            border-radius: 10px;
+            background: var(--input);
+            color: var(--text);
+            font-size: 0.95rem;
+            outline: none;
+            cursor: pointer;
+            appearance: none;
+            -webkit-appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%23888' viewBox='0 0 16 16'%3E%3Cpath d='M1.5 5.5l6.5 6 6.5-6'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+        }
+        .option-group select:focus { border-color: var(--accent); }
+
+        .btn {
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.05rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .btn-primary {
+            background: var(--accent);
+            color: #fff;
+        }
+        .btn-primary:hover:not(:disabled) {
+            background: #e6002e;
+            transform: translateY(-1px);
+        }
+        .btn-primary:active:not(:disabled) { transform: translateY(0); }
+        .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .progress-container {
+            margin-top: 20px;
+            display: none;
+        }
+        .progress-container.visible { display: block; }
+        .progress-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.85rem;
+            color: var(--muted);
+            margin-bottom: 8px;
+        }
+        .progress-bar-bg {
+            width: 100%;
+            height: 8px;
+            background: #2a2a4a;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .progress-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #ff0033, #ff6b6b);
+            border-radius: 4px;
+            transition: width 0.3s ease;
+            width: 0%;
+        }
+        .progress-bar-fill.done { background: var(--success); }
+
+        .result {
+            margin-top: 20px;
+            display: none;
+        }
+        .result.visible { display: block; }
+        .result .btn-download { background: var(--success); color: #fff; }
+        .result .btn-download:hover { background: #00a344; }
+
+        .error-msg {
+            margin-top: 16px;
+            padding: 14px 16px;
+            background: rgba(255, 59, 48, 0.1);
+            border: 1px solid rgba(255, 59, 48, 0.25);
+            border-radius: 10px;
+            color: #ff6b6b;
+            font-size: 0.88rem;
+            line-height: 1.5;
+            display: none;
+        }
+        .error-msg.visible { display: block; }
+
+        .footer {
+            margin-top: auto;
+            padding-top: 32px;
+            text-align: center;
+            color: var(--muted);
+            font-size: 0.8rem;
+        }
+
+        @media (max-width: 480px) {
+            body { padding: 12px; }
+            .card { padding: 20px; }
+            .logo h1 { font-size: 1.2rem; }
+            .options { flex-direction: column; gap: 10px; }
+            .paste-btn span { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="logo">
+        <img src="/static/icon.svg" alt="Logo">
+        <h1>YouTube Downloader</h1>
+    </div>
+    <p class="subtitle">Download YouTube videos as MP3 or MP4 — free, fast, works everywhere</p>
+
+    <!-- Right-click context menu -->
+    <div class="ctx-menu" id="ctxMenu">
+        <div class="ctx-menu-item" id="ctxPaste">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>
+                <rect x="8" y="2" width="8" height="4" rx="1"/>
+            </svg>
+            Paste URL
+        </div>
+        <div class="ctx-menu-divider"></div>
+        <div class="ctx-menu-item" id="ctxClear">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="18" y1="6" x2="6" y2="18"/>
+                <line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+            Clear
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="input-group">
+            <label for="url">YouTube URL</label>
+            <div class="input-wrapper">
+                <input
+                    type="url"
+                    id="url"
+                    placeholder="https://youtube.com/watch?v=..."
+                    autocomplete="off"
+                    spellcheck="false"
+                >
+                <button class="paste-btn" id="pasteBtn" title="Paste URL from clipboard">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>
+                        <rect x="8" y="2" width="8" height="4" rx="1"/>
+                    </svg>
+                    <span>Paste</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Video preview -->
+        <div class="preview-card" id="previewCard">
+            <img class="preview-thumb" id="previewThumb" src="" alt="Video thumbnail">
+            <div class="preview-info">
+                <div class="preview-text">
+                    <div class="preview-title" id="previewTitle"></div>
+                    <div class="preview-meta">
+                        <span id="previewChannel"></span>
+                        <span id="previewDuration"></span>
+                    </div>
+                </div>
+                <div class="preview-check">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                        <polyline points="20 6 9 17 4 12"/>
+                    </svg>
+                </div>
+            </div>
+        </div>
+
+        <div class="options">
+            <div class="option-group">
+                <label for="format">Format</label>
+                <select id="format">
+                    <option value="mp3">MP3 (Audio)</option>
+                    <option value="mp4">MP4 (Video)</option>
+                </select>
+            </div>
+            <div class="option-group">
+                <label for="quality">Quality</label>
+                <select id="quality">
+                    <option value="320">320 kbps (Best)</option>
+                    <option value="256">256 kbps</option>
+                    <option value="192" selected>192 kbps</option>
+                    <option value="128">128 kbps</option>
+                </select>
+            </div>
+        </div>
+
+        <button class="btn btn-primary" id="downloadBtn" onclick="startDownload()">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="7 10 12 15 17 10"/>
+                <line x1="12" y1="15" x2="12" y2="3"/>
+            </svg>
+            Download
+        </button>
+
+        <div class="progress-container" id="progressContainer">
+            <div class="progress-label">
+                <span id="progressText">Downloading...</span>
+                <span id="progressPct">0%</span>
+            </div>
+            <div class="progress-bar-bg">
+                <div class="progress-bar-fill" id="progressBar"></div>
+            </div>
+        </div>
+
+        <div class="result" id="result">
+            <button class="btn btn-download" id="saveBtn" onclick="saveFile()">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+                    <polyline points="17 21 17 13 7 13 7 21"/>
+                    <polyline points="7 3 7 8 15 8"/>
+                </svg>
+                <span id="saveBtnText">Save File</span>
+            </button>
+        </div>
+
+        <div class="error-msg" id="errorMsg"></div>
+    </div>
+
+    <div class="footer">
+        <p>YouTube Downloader — built with Flask &amp; yt-dlp</p>
+        <p style="margin-top:4px">Works on PC, Mac, Linux, Android &amp; iPhone</p>
+    </div>
+
+<script>
+let currentJobId = null;
+let pollInterval = null;
+let previewTimeout = null;
+
+// ========== Context menu (right-click on URL input) ==========
+const ctxMenu = document.getElementById('ctxMenu');
+const urlInput = document.getElementById('url');
+
+urlInput.addEventListener('contextmenu', function(e) {
+    e.preventDefault();
+    // Position the custom menu
+    let x = e.clientX;
+    let y = e.clientY;
+    // Keep within viewport
+    ctxMenu.style.left = Math.min(x, window.innerWidth - 200) + 'px';
+    ctxMenu.style.top = Math.min(y, window.innerHeight - 100) + 'px';
+    ctxMenu.classList.add('visible');
+});
+
+// Hide context menu on click elsewhere
+document.addEventListener('click', function() {
+    ctxMenu.classList.remove('visible');
+});
+document.addEventListener('contextmenu', function(e) {
+    if (!urlInput.contains(e.target) && !ctxMenu.contains(e.target)) {
+        ctxMenu.classList.remove('visible');
+    }
+});
+
+// Context menu: Paste
+document.getElementById('ctxPaste').addEventListener('click', async function() {
+    try {
+        const text = await navigator.clipboard.readText();
+        urlInput.value = text.trim();
+        urlInput.focus();
+        urlInput.dispatchEvent(new Event('input'));
+        fetchVideoPreview(text.trim());
+    } catch {
+        // Fallback: just focus input
+        urlInput.focus();
+    }
+});
+
+// Context menu: Clear
+document.getElementById('ctxClear').addEventListener('click', function() {
+    urlInput.value = '';
+    hidePreview();
+});
+
+// ========== Paste button inside input ==========
+document.getElementById('pasteBtn').addEventListener('click', async function() {
+    try {
+        const text = await navigator.clipboard.readText();
+        urlInput.value = text.trim();
+        urlInput.focus();
+        urlInput.dispatchEvent(new Event('input'));
+        fetchVideoPreview(text.trim());
+    } catch {
+        urlInput.focus();
+    }
+});
+
+// ========== Video preview ==========
+let lastPreviewUrl = '';
+
+async function fetchVideoPreview(url) {
+    if (!url || url === lastPreviewUrl) return;
+    lastPreviewUrl = url;
+
+    // Validate it looks like a YouTube URL
+    if (!/youtu(\.be|be\.com)/.test(url)) {
+        hidePreview();
+        return;
+    }
+
+    try {
+        const resp = await fetch('/api/info', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ url })
+        });
+        const data = await resp.json();
+
+        if (!resp.ok || data.error) {
+            hidePreview();
+            return;
+        }
+
+        // Show preview card
+        const card = document.getElementById('previewCard');
+        document.getElementById('previewThumb').src = data.thumbnail || '';
+        document.getElementById('previewTitle').textContent = data.title || '';
+        document.getElementById('previewChannel').textContent = data.channel || '';
+        document.getElementById('previewDuration').textContent = data.duration || '';
+        card.classList.add('visible');
+    } catch {
+        hidePreview();
+    }
+}
+
+function hidePreview() {
+    document.getElementById('previewCard').classList.remove('visible');
+    lastPreviewUrl = '';
+}
+
+// Trigger preview when user types/pastes a URL
+urlInput.addEventListener('input', function() {
+    clearTimeout(previewTimeout);
+    const val = this.value.trim();
+    if (val && /youtu(\.be|be\.com)/.test(val)) {
+        previewTimeout = setTimeout(() => fetchVideoPreview(val), 500);
+    } else {
+        hidePreview();
+    }
+});
+
+// Also trigger on paste
+urlInput.addEventListener('paste', function() {
+    setTimeout(() => {
+        const val = this.value.trim();
+        if (val) fetchVideoPreview(val);
+    }, 150);
+});
+
+// ========== Format / Quality ==========
+document.getElementById('format').addEventListener('change', function() {
+    const qs = document.getElementById('quality');
+    if (this.value === 'mp3') {
+        qs.innerHTML = `
+            <option value="320">320 kbps (Best)</option>
+            <option value="256">256 kbps</option>
+            <option value="192" selected>192 kbps</option>
+            <option value="128">128 kbps</option>`;
+    } else {
+        qs.innerHTML = `
+            <option value="best">Best Quality</option>
+            <option value="1080">1080p</option>
+            <option value="720" selected>720p</option>
+            <option value="480">480p</option>
+            <option value="360">360p</option>`;
+    }
+});
+
+// ========== Download ==========
+async function startDownload() {
+    const url = urlInput.value.trim();
+    const format = document.getElementById('format').value;
+    const quality = document.getElementById('quality').value;
+
+    if (!url) { showError('Please enter a YouTube URL'); return; }
+
+    hideError();
+    document.getElementById('result').classList.remove('visible');
+    document.getElementById('progressContainer').classList.add('visible');
+    document.getElementById('downloadBtn').disabled = true;
+    document.getElementById('progressBar').classList.remove('done');
+    updateProgress(0, 'Starting download...');
+
+    try {
+        const resp = await fetch('/api/download', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ url, format, quality })
+        });
+        const data = await resp.json();
+        if (!resp.ok) {
+            showError(data.error || 'Failed to start download');
+            document.getElementById('downloadBtn').disabled = false;
+            return;
+        }
+        currentJobId = data.job_id;
+        pollStatus();
+    } catch {
+        showError('Network error — are you connected?');
+        document.getElementById('downloadBtn').disabled = false;
+    }
+}
+
+function pollStatus() {
+    if (pollInterval) clearInterval(pollInterval);
+    pollInterval = setInterval(async () => {
+        if (!currentJobId) return;
+        try {
+            const resp = await fetch(`/api/status/${currentJobId}`);
+            const data = await resp.json();
+            if (data.status === 'downloading' || data.status === 'processing') {
+                updateProgress(data.progress, data.status === 'processing' ? 'Processing...' : 'Downloading...');
+            } else if (data.status === 'done') {
+                clearInterval(pollInterval); pollInterval = null;
+                updateProgress(100, 'Done!');
+                document.getElementById('progressBar').classList.add('done');
+                document.getElementById('saveBtnText').textContent = data.filename || 'Save File';
+                document.getElementById('result').classList.add('visible');
+                document.getElementById('downloadBtn').disabled = false;
+            } else if (data.status === 'error') {
+                clearInterval(pollInterval); pollInterval = null;
+                showError(data.error || 'Download failed');
+                document.getElementById('downloadBtn').disabled = false;
+                document.getElementById('progressContainer').classList.remove('visible');
+            }
+        } catch {}
+    }, 800);
+}
+
+function updateProgress(pct, text) {
+    document.getElementById('progressBar').style.width = pct + '%';
+    document.getElementById('progressPct').textContent = pct + '%';
+    document.getElementById('progressText').textContent = text || 'Downloading...';
+}
+
+function saveFile() {
+    if (!currentJobId) return;
+    const a = document.createElement('a');
+    a.href = `/api/file/${currentJobId}`;
+    a.click();
+}
+
+function showError(msg) {
+    const el = document.getElementById('errorMsg');
+    el.textContent = msg;
+    el.classList.add('visible');
+}
+
+function hideError() {
+    document.getElementById('errorMsg').classList.remove('visible');
+}
+
+// Enter key to download
+urlInput.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') startDownload();
+});
+</script>
+
+</body>
+</html>
